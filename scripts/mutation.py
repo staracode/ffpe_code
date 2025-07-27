@@ -3,11 +3,31 @@ from cyvcf2 import VCF
 from pyfaidx import Fasta
 from collections import defaultdict
 from Bio.Seq import reverse_complement
+import tempfile
+import shutil
+import gzip
 
 # Initialize 96 trinucleotide contexts
 bases = ['A', 'C', 'G', 'T']
 mutations = ['C>A', 'C>G', 'C>T', 'T>A', 'T>C', 'T>G']
 context_keys = [f"{m}@{x}_{y}" for m in mutations for x in bases for y in bases]
+
+def fix_vcf_header_if_needed(vcf_path):
+    opener = gzip.open if vcf_path.endswith(".gz") else open
+    with opener(vcf_path, 'rt') as f:
+        lines = f.readlines()
+
+    if any(line.startswith("##fileformat=") for line in lines):
+        return vcf_path  # already fine
+
+    # Insert fileformat header
+    temp = tempfile.NamedTemporaryFile(delete=False, suffix=".vcf.gz", mode="wt")
+    temp.write("##fileformat=VCFv4.2\n")
+    for line in lines:
+        if not line.startswith("##fileformat="):
+            temp.write(line)
+    temp.close()
+    return temp.name
 
 def normalize_context(chrom, pos, ref, alt, fasta):
     """Return pyrimidine-normalized trinucleotide context and mutation key."""
@@ -43,7 +63,8 @@ def normalize_context(chrom, pos, ref, alt, fasta):
 
 def count_mutations(vcf_file, fasta_file, output_file):
     fasta = Fasta(fasta_file)
-    vcf = VCF(vcf_file)
+    fixed_vcf = fix_vcf_header_if_needed(vcf_file)
+    vcf = VCF(fixed_vcf)
     mutation_counts = {key: 0 for key in context_keys}
 
     for variant in vcf:
