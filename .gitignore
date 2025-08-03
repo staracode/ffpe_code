@@ -4,3 +4,5 @@ BRP/*
 mutation_outputs/*
 mutation_corrected_outputs_repaired/*
 mutation_corrected_outputs_unrepaired/*
+/scripts/__pycache__
+/__pycache__
