@@ -7,10 +7,13 @@ A comprehensive pipeline for analyzing FFPE (Formalin-Fixed Paraffin-Embedded) t
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
-- [Data Preparation](#data-preparation)
 - [Usage](#usage)
 - [Scripts](#scripts)
 - [Output](#output)
+- [Example Workflow](#example-workflow)
+- [Contributing](#contributing)
+- [License](#license)
+- [References](#references)
 
 ## 🔍 Overview
 
@@ -49,10 +52,7 @@ conda install -c bioconda matplotlib
 conda install -c bioconda seaborn
 conda install -c bioconda scikit-learn
 conda install -c bioconda scikit-image
-conda install -c bioconda scikit-image  
 ```
-
-brew install wget
 
 ### Download Reference Genome
 ```bash
@@ -147,3 +147,13 @@ This pipeline is designed for FFPE mutation analysis. Please ensure your input V
 ## 📄 License
 
 This project is for research purposes. Please cite appropriately if used in publications.
+
+## 📚 References
+
+### Data Sources
+- [FFPE Mutation Analysis Paper](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02709-8#Sec10) - Genome Biology publication on FFPE mutation analysis
+- [BRP FFPE Dataset](https://figshare.com/articles/dataset/_BRP_FFPE_VCF_file_and_panel_bed/17072612) - Figshare dataset containing BRP FFPE VCF files and panel bed files
+
+### FFPE Signature Analysis
+- [FFPE Signature Paper](https://www.nature.com/articles/s41467-022-32041-5#Sec11) - Nature Communications publication on FFPE signatures
+- [FFPEsig GitHub Repository](https://github.com/QingliGuo/FFPEsig) - Original FFPEsig tool implementation
