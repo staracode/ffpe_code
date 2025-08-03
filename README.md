@@ -81,18 +81,18 @@ python convert_vcf.py input.vcf output_adj.vcf
 ### 2. Mutation Analysis
 Process VCF files to generate mutation counts:
 ```bash
-python scripts/mutation.py input.vcf hg19.fa output_counts.tsv
+python scripts/mutation.py input.vcf genome_files/hg19.fa output_counts.tsv
 ```
 
 ### 3. FFPE Signature Analysis
 
 #### Single Sample Analysis
-Run signature analysis for unrepaired samples:
+Run signature analysis for a unrepaired sample:
 ```bash
 python scripts/FFPEsig.py -i mutation_matrix.csv -o mutation_corrected_outputs_unrepaired/ -s sample_name -l Unrepaired
 ```
 
-Run signature analysis for repaired samples:
+Run signature analysis for a single repaired sample:
 ```bash
 python scripts/FFPEsig.py -i mutation_matrix.csv -o mutation_corrected_outputs_repaired/ -s sample_name -l Repaired
 ```

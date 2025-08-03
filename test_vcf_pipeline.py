@@ -101,7 +101,6 @@ class TestVCFPipeline(unittest.TestCase):
         
         print(f"✓ VCF conversion successful: {len(data_lines)} variants processed")
     
-    @unittest.skipUnless(MUTATION_AVAILABLE, "mutation module not available (missing dependencies)")
     def test_mutation_counting(self):
         """Test mutation counting from VCF."""
         if not os.path.exists(self.reference_fasta):
