@@ -23,10 +23,8 @@ def create_heatmap(df, title, filename, figsize=(15, 12), cluster_samples=True):
                           col_cluster=True,   # Cluster columns (samples)
                           dendrogram_ratio=0.2,  # Dendrogram takes 20% of height
                           cbar_pos=(0.02, 0.32, 0.03, 0.2))  # Position colorbar
-        
-        # Set titles
-        g.fig.suptitle(f'{title} (Samples Ordered by Similarity)', fontsize=14, y=0.95)
-        
+         
+        plt.suptitle(title)
         # Rotate x-axis labels
         g.ax_heatmap.tick_params(axis='x', rotation=45)
         
@@ -100,7 +98,7 @@ def main():
     if df_orig is not None:
         df_sel = df_orig[selected]
         create_heatmap(df_sel, 
-                      "Original Mutation Context Heatmap — Selected Samples", 
+                      "Original Mutation Context Heatmap", 
                       "results/heatmap_original.png")
     else:
         print(f"⚠️  Skipping original heatmap - data not loaded")
@@ -121,7 +119,7 @@ def main():
                 df_unrepaired_sel.index = df_orig.index
             
             create_heatmap(df_unrepaired_sel, 
-                          "Unrepaired Corrected Mutation Context Heatmap — Selected Samples", 
+                          "Unrepaired Corrected Mutation Context Heatmap", 
                           "results/heatmap_unrepaired_corrected.png")
         else:
             print(f"⚠️  No selected samples found in unrepaired data")
@@ -144,14 +142,82 @@ def main():
                 df_repaired_sel.index = df_orig.index
             
             create_heatmap(df_repaired_sel, 
-                          "Repaired Corrected Mutation Context Heatmap — Selected Samples", 
+                          "Repaired Corrected Mutation Context Heatmap", 
                           "results/heatmap_repaired_corrected.png")
         else:
             print(f"⚠️  No selected samples found in repaired data")
     else:
         print(f"⚠️  Skipping repaired heatmap - data not loaded")
     
-    #  Summary statistics plot
+    # Comparison heatmap (Original vs Repaired Corrected)
+    print("Creating comparison heatmap (Original vs Repaired Corrected)...")
+    if df_orig is not None and df_repaired is not None:
+        try:
+            # Find common samples
+            common_samples = list(set(df_orig.columns) & set(df_repaired.columns) & set(selected))
+            if len(common_samples) >= 2:  # Need at least 2 samples for comparison
+                # Create comparison dataframe with original and corrected values side by side
+                # First, ensure both matrices have the same structure
+                df_orig_subset = df_orig[common_samples].astype(float)
+                df_repaired_subset = df_repaired[common_samples].astype(float)
+                
+                # Reset indices to ensure they match
+                df_orig_subset = df_orig_subset.reset_index(drop=True)
+                df_repaired_subset = df_repaired_subset.reset_index(drop=True)
+                
+                comparison_data = {}
+                for sample in common_samples:
+                    comparison_data[f"{sample}_Original"] = df_orig_subset[sample]
+                    comparison_data[f"{sample}_Corrected"] = df_repaired_subset[sample]
+                
+                df_comparison = pd.DataFrame(comparison_data)
+                
+                # Use original row labels for the comparison matrix
+                if len(df_comparison) == len(df_orig):
+                    df_comparison.index = df_orig.index
+                
+                # Normalize the data (Z-score normalization)
+                from sklearn.preprocessing import StandardScaler
+                scaler = StandardScaler()
+                df_comparison_normalized = pd.DataFrame(
+                    scaler.fit_transform(df_comparison),
+                    index=df_comparison.index,
+                    columns=df_comparison.columns
+                )
+                
+                # Create clustermap with normalized data clustering
+                g = sns.clustermap(df_comparison_normalized,
+                                  cmap="viridis",
+                                  cbar_kws={'label': 'Normalized Mutation Count'},
+                                  yticklabels=True,  # Show mutation type names
+                                  xticklabels=True,
+                                  figsize=(20, 14),
+                                  method='ward',
+                                  metric='euclidean',
+                                  row_cluster=False,  # Don't cluster rows (mutation types)
+                                  col_cluster=True,   # Cluster columns (samples)
+                                  dendrogram_ratio=0.2,  # Dendrogram takes 20% of height
+                                  cbar_pos=(0.02, 0.32, 0.03, 0.2))  # Position colorbar left
+                
+                # Set titles
+                g.fig.suptitle('Original vs Repaired Corrected Mutation Contexts (Normalized)\n', 
+                              fontsize=16, y=0.95)
+                
+                # Rotate x-axis labels
+                g.ax_heatmap.tick_params(axis='x', rotation=45)
+                
+                plt.savefig("results/heatmap_comparison.png", dpi=300, bbox_inches='tight')
+                plt.close()
+                print("✓ Saved results/heatmap_comparison.png")
+                
+            else:
+                print("⚠️  Not enough common samples for comparison heatmap")
+        except Exception as e:
+            print(f"⚠️  Error creating comparison heatmap: {e}")
+    else:
+        print("⚠️  One or both data matrices not loaded, skipping comparison heatmap")
+    
+    # Summary statistics plot
     print("Creating summary statistics plot...")
     try:
         fig, axes = plt.subplots(2, 2, figsize=(15, 12))
@@ -269,7 +335,7 @@ def main():
                               cbar_pos=(0.02, 0.32, 0.03, 0.2))  # Position colorbar
             
             # Set titles
-            g.fig.suptitle('Mutation Frequency Heatmap - Top 20 Mutation Types\n(Samples Ordered by Similarity)', 
+            g.fig.suptitle('Mutation Frequency Heatmap - Top 20 Mutation Types', 
                           fontsize=16, y=0.95)
             
             # Rotate x-axis labels
@@ -307,7 +373,7 @@ def main():
                        yticklabels=True,  # Show mutation type names
                        annot_kws={'size': 8})
             
-            plt.title('Mutation Frequency Heatmap - Top 20 Mutation Types (with percentages)\n(Samples Ordered by Similarity)\n(Relative frequency across samples)', 
+            plt.title('Mutation Frequency Heatmap - Top 20 Mutation Types', 
                      fontsize=22, fontweight='bold', pad=20)
             plt.xlabel('Samples', fontsize=18, fontweight='bold')
             plt.ylabel('Mutation Types', fontsize=18, fontweight='bold')
@@ -355,7 +421,7 @@ def main():
                     plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1, 
                             f'{int(value)}', ha='center', va='bottom', fontsize=10, fontweight='bold')
                 
-                plt.title('C>T Mutation Counts per Sample\n(FFPE Signature Analysis)', 
+                plt.title('C>T Mutation Counts per Sample)', 
                          fontsize=18, fontweight='bold', pad=20)
                 plt.xlabel('Samples', fontsize=14, fontweight='bold')
                 plt.ylabel('Total C>T Mutations', fontsize=14, fontweight='bold')
@@ -408,11 +474,12 @@ def main():
     
     print("\n🎉 Heatmap generation completed!")
     print("\n📊 Generated files:")
-    print("  • Original heatmap (samples ordered by similarity): results/heatmap_original.png")
-    print("  • Unrepaired corrected heatmap (samples ordered by similarity): results/heatmap_unrepaired_corrected.png")
-    print("  • Repaired corrected heatmap (samples ordered by similarity): results/heatmap_repaired_corrected.png")
+    print("  • Original heatmap: results/heatmap_original.png")
+    print("  • Unrepaired corrected heatmap: results/heatmap_unrepaired_corrected.png")
+    print("  • Repaired corrected heatmap: results/heatmap_repaired_corrected.png")
+    print("  • Comparison heatmap (Original vs Corrected): results/heatmap_comparison.png")
     print("  • Summary statistics: results/heatmap_summary_statistics.png")
-    print("  • Large frequency heatmaps (samples ordered by similarity): results/mutation_frequency_heatmap_large*.png")
+    print("  • Large frequency heatmaps: results/mutation_frequency_heatmap_large*.png")
     print("  • C>T mutation bar plot: results/ct_mutations_bar_plot.png")
 
 if __name__ == "__main__":

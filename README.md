@@ -81,7 +81,7 @@ python convert_vcf.py input.vcf output_adj.vcf
 ### 2. Mutation Analysis
 Process VCF files to generate mutation counts:
 ```bash
-python scripts/mutation.py input.vcf genome_files/hg19.fa output_counts.tsv
+python scripts/mutation.py --input input.vcf --reference genome_files/hg19.fa --output output_counts.tsv
 ```
 
 ### 3. FFPE Signature Analysis
@@ -117,10 +117,9 @@ python scripts/FFPEsig_batch.py -i results/mutation_matrix.csv -l Repaired -o mu
 - **`FFPEsig.py`**: FFPE signature analysis for single samples (repaired/unrepaired)
 - **`FFPEsig_batch.py`**: Batch FFPE signature analysis for all samples in a matrix
 - **`convert_vcf.py`**: VCF format conversion and validation
-
-### Utility Scripts
 - **`combine_mutation_counts.py`**: Combine multiple mutation count files
-- **`create_mutation_counts_for_all_vcfs_in_directory.py`**: Batch process VCF files
+
+### Utility Scripts to get more FFPE data from TCGA (which requires authorization)
 - **`get_tcga.py`**: Download TCGA data
 - **`vcfdownload.py`**: Download VCF files
 
@@ -153,11 +152,9 @@ The pipeline includes comprehensive test suites to validate functionality:
 
 ### Running Tests
 ```bash
-# Run the main test suite
-python test_vcf_pipeline.py
-
-# Run tests with specific environment
-conda activate py310env
+# Run the main test suite using the sample file provided by the FFPE author
+# The test compares the results of VCF to mutation count conversion to results by the author
+# Test to make sure that mutation counts are handled the same way as the Nature paper
 python test_vcf_pipeline.py
 ```
 
@@ -182,20 +179,17 @@ Tests will gracefully handle missing dependencies and provide helpful error mess
 
 ## 📝 Example Workflow
 
-Here's a complete example workflow:
+Here's a complete example workflow (processing BRP dataset):
 
 ```bash
-# 1. Convert VCF format
-python convert_vcf.py study3_FFPE-only_mutations.vcf study3_FFPE-only_mutations_adj.vcf
+# 1. Generate mutation counts from VCF files in BRP dataset
+/Users/tarafriedrich/Documents/GitHub/ffpe_code/scripts/combine_mutation_counts.py 
 
-# 2. Generate mutation counts
-python scripts/mutation.py study3_FFPE-only_mutations_adj.vcf hg19.fa study3_FFPE-only_mutations-tf.tsv
-
-# 3. Run signature analysis (single sample)
+# 2. Run signature analysis (single sample)
 python scripts/FFPEsig.py -i mutation_matrix.csv -o mutation_corrected_outputs_unrepaired/ -s BRP_24_G_13 -l Unrepaired
 python scripts/FFPEsig.py -i mutation_matrix.csv -o mutation_corrected_outputs_repaired/ -s BRP_24_G_13 -l Repaired
 
-# 4. Run batch signature analysis (all samples)
+# 3. Run batch signature analysis (all samples)
 python scripts/FFPEsig_batch.py -i results/mutation_matrix.csv -l Unrepaired -o mutation_corrected_outputs_unrepaired
 python scripts/FFPEsig_batch.py -i results/mutation_matrix.csv -l Repaired -o mutation_corrected_outputs_repaired
 ```

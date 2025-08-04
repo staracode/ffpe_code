@@ -8,3 +8,5 @@ mutation_corrected_outputs_unrepaired/*
 /__pycache__
 /mutation_repaired
 /mutation_unrepaired
+temp/gdc-client
+.DS_Store

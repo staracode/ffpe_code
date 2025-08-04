@@ -6,9 +6,9 @@ import pandas as pd
 # === CONFIGURATION ===
 input_dir = "BRP"  # folder containing .vcf or .vcf.gz
 output_dir = "mutation_outputs"
-fasta_file = "hg19.fa"
+fasta_file = "genome_files/hg19.fa"
 script_path = "scripts/mutation.py"
-merged_output = "mutation_matrix.csv"
+merged_output = "results/mutation_matrix.csv"
 
 # === STEP 1: Run mutation.py on each VCF ===
 os.makedirs(output_dir, exist_ok=True)
@@ -21,7 +21,7 @@ for vcf_file in vcf_files:
 
     print(f"Processing: {vcf_file} → {output_file}")
 
-    cmd = ["python", script_path, vcf_file, fasta_file, output_file]
+    cmd = ["python", script_path, "--input", vcf_file, "--reference", fasta_file, "--output", output_file]
     try:
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:

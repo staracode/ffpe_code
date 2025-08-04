@@ -181,7 +181,9 @@ class TestVCFPipeline(unittest.TestCase):
             try:
                 result = subprocess.run([
                     sys.executable, "scripts/mutation.py",
-                    str(self.temp_adj_vcf), self.reference_fasta, str(self.temp_counts)
+                    "--input", str(self.temp_adj_vcf),
+                    "--reference", self.reference_fasta,
+                    "--output", str(self.temp_counts)
                 ], capture_output=True, text=True, check=True)
                 self.assertTrue(self.temp_counts.exists())
                 print("✓ mutation.py CLI test passed")
