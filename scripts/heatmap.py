@@ -434,20 +434,6 @@ def main():
                 # Add grid
                 plt.grid(True, alpha=0.3, axis='y')
                 
-                # Add statistics text
-                stats_text = f"""
-                Total C>T Mutation Types: {len(ct_mutations)}
-                Total C>T Mutations: {ct_sums_sorted.sum():,}
-                Mean per Sample: {ct_sums_sorted.mean():.1f}
-                Median per Sample: {ct_sums_sorted.median():.1f}
-                Min: {ct_sums_sorted.min()}
-                Max: {ct_sums_sorted.max()}
-                """
-                
-                plt.figtext(0.98, 0.98, stats_text, fontsize=12, 
-                           bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.8),
-                           ha='right', va='top')
-                
                 plt.tight_layout()
                 plt.savefig("results/ct_mutations_bar_plot.png", dpi=300, bbox_inches='tight')
                 plt.close()
