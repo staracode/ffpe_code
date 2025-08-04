@@ -4,6 +4,8 @@ import seaborn as sns
 import os
 from pathlib import Path
 import numpy as np
+from sklearn.decomposition import PCA
+
 
 def create_heatmap(df, title, filename, figsize=(15, 12), cluster_samples=True):
     """
@@ -48,6 +50,145 @@ def create_heatmap(df, title, filename, figsize=(15, 12), cluster_samples=True):
         plt.savefig(filename, dpi=300, bbox_inches='tight')
         plt.close()
         print(f"✓ Saved {filename}")
+
+def create_pca_plot(df, title, filename, figsize=(12, 10)):
+    """
+    Create a PCA plot from a dataframe and save it
+    """
+    try:
+        # Transpose the dataframe so samples are rows and features are columns
+        df_t = df.T
+        
+        # Normalize by total counts per sample
+        df_scaled = df_t.copy()
+        for col in df_scaled.columns:
+            total_counts = df_scaled[col].sum()
+            if total_counts > 0:  # Avoid division by zero
+                df_scaled[col] = df_scaled[col] / total_counts
+        
+        # Perform PCA
+        pca = PCA()
+        pca_result = pca.fit_transform(df_scaled)
+        
+        # Calculate explained variance
+        explained_variance = pca.explained_variance_ratio_
+        cumulative_variance = np.cumsum(explained_variance)
+        
+        # Parse sample names to extract time and block information
+        def parse_sample_info(sample_name):
+            """Extract time and block from sample name like 'BRP_1_G_3'"""
+            parts = sample_name.split('_')
+            if len(parts) >= 3:
+                time = parts[1]  # e.g., '1', '2', '6', '24'
+                block = parts[2]  # e.g., 'G', 'H'
+                return time, block
+            return None, None
+        
+        # Create color mappings
+        times = []
+        blocks = []
+        for sample in df_t.index:
+            time, block = parse_sample_info(sample)
+            times.append(time)
+            blocks.append(block)
+        
+        # Create two separate PCA plots with different color schemes
+        
+        # Plot 1: Color by time
+        plt.figure(figsize=(10, 8))
+        time_colors = {'1': 'red', '2': 'blue', '6': 'green', '24': 'purple'}
+        time_color_list = [time_colors.get(t, 'gray') for t in times]
+        
+        scatter = plt.scatter(pca_result[:, 0], pca_result[:, 1], 
+                             c=time_color_list, s=100, alpha=0.7, 
+                             edgecolors='black', linewidth=0.5)
+        
+        # Add sample labels
+        for i, sample in enumerate(df_t.index):
+            plt.annotate(sample, (pca_result[i, 0], pca_result[i, 1]), 
+                        xytext=(5, 5), textcoords='offset points', 
+                        fontsize=8, alpha=0.8)
+        
+        plt.xlabel(f'PC1 ({explained_variance[0]:.1%} variance)')
+        plt.ylabel(f'PC2 ({explained_variance[1]:.1%} variance)')
+        plt.title('PCA of Mutation Profiles - Colored by Time')
+        
+        # Add legend for time colors
+        legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
+                                     markerfacecolor=color, markersize=10, 
+                                     label=f'{time}h') 
+                          for time, color in time_colors.items()]
+        plt.legend(handles=legend_elements, title='Time')
+        
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        print(f"✓ Saved {filename}")
+        
+        # Plot 2: Color by block
+        block_filename = filename.replace('.png', '_by_block.png')
+        plt.figure(figsize=(10, 8))
+        block_colors = {'G': 'orange', 'H': 'cyan'}
+        block_color_list = [block_colors.get(b, 'gray') for b in blocks]
+        
+        scatter = plt.scatter(pca_result[:, 0], pca_result[:, 1], 
+                             c=block_color_list, s=100, alpha=0.7, 
+                             edgecolors='black', linewidth=0.5)
+        
+        # Add sample labels
+        for i, sample in enumerate(df_t.index):
+            plt.annotate(sample, (pca_result[i, 0], pca_result[i, 1]), 
+                        xytext=(5, 5), textcoords='offset points', 
+                        fontsize=8, alpha=0.8)
+        
+        plt.xlabel(f'PC1 ({explained_variance[0]:.1%} variance)')
+        plt.ylabel(f'PC2 ({explained_variance[1]:.1%} variance)')
+        plt.title('PCA of Mutation Profiles - Colored by Block')
+        
+        # Add legend for block colors
+        legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
+                                     markerfacecolor=color, markersize=10, 
+                                     label=f'Block {block}') 
+                          for block, color in block_colors.items()]
+        plt.legend(handles=legend_elements, title='Block')
+        
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(block_filename, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        print(f"✓ Saved {block_filename}")
+        
+        # Create elbow plot (explained variance)
+        elbow_filename = filename.replace('.png', '_elbow.png')
+        plt.figure(figsize=(10, 8))
+        plt.plot(range(1, len(explained_variance) + 1), cumulative_variance, 
+                'bo-', linewidth=2, markersize=6)
+        plt.axhline(y=0.8, color='r', linestyle='--', alpha=0.7, label='80% variance')
+        plt.axhline(y=0.9, color='orange', linestyle='--', alpha=0.7, label='90% variance')
+        plt.axhline(y=0.95, color='green', linestyle='--', alpha=0.7, label='95% variance')
+        
+        plt.xlabel('Number of Principal Components')
+        plt.ylabel('Cumulative Explained Variance')
+        plt.title('Explained Variance by Principal Components')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(elbow_filename, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        print(f"✓ Saved {elbow_filename}")
+        
+        # Print PCA information
+        print(f"  • First 2 PCs explain {cumulative_variance[1]:.1%} of variance")
+        print(f"  • PCs needed for 80% variance: {np.argmax(cumulative_variance >= 0.8) + 1}")
+        print(f"  • PCs needed for 90% variance: {np.argmax(cumulative_variance >= 0.9) + 1}")
+        print(f"  • PCs needed for 95% variance: {np.argmax(cumulative_variance >= 0.95) + 1}")
+        
+    except Exception as e:
+        print(f"⚠️  Error creating PCA plot: {e}")
 
 def main():
     # Create results directory if it doesn't exist
@@ -100,6 +241,12 @@ def main():
         create_heatmap(df_sel, 
                       "Original Mutation Context Heatmap", 
                       "results/heatmap_original.png")
+        
+        # Create PCA plot for original mutation matrix
+        print("Creating PCA plot for original mutation matrix...")
+        create_pca_plot(df_sel, 
+                       "PCA Analysis of Original Mutation Profiles", 
+                       "results/pca_original_mutations.png")
     else:
         print(f"⚠️  Skipping original heatmap - data not loaded")
     
@@ -110,9 +257,6 @@ def main():
         available_samples = [s for s in selected if s in df_unrepaired.columns]
         if available_samples:
             df_unrepaired_sel = df_unrepaired[available_samples]
-            # Sort columns alphanumerically
-            sorted_columns = sorted(df_unrepaired_sel.columns, key=str)
-            df_unrepaired_sel = df_unrepaired_sel[sorted_columns]
             
             # Use original row labels if available
             if df_orig is not None and len(df_unrepaired_sel) == len(df_orig):
@@ -133,9 +277,6 @@ def main():
         available_samples = [s for s in selected if s in df_repaired.columns]
         if available_samples:
             df_repaired_sel = df_repaired[available_samples]
-            # Sort columns alphanumerically
-            sorted_columns = sorted(df_repaired_sel.columns, key=str)
-            df_repaired_sel = df_repaired_sel[sorted_columns]
             
             # Use original row labels if available
             if df_orig is not None and len(df_repaired_sel) == len(df_orig):
@@ -176,19 +317,17 @@ def main():
                 if len(df_comparison) == len(df_orig):
                     df_comparison.index = df_orig.index
                 
-                # Normalize the data (Z-score normalization)
-                from sklearn.preprocessing import StandardScaler
-                scaler = StandardScaler()
-                df_comparison_normalized = pd.DataFrame(
-                    scaler.fit_transform(df_comparison),
-                    index=df_comparison.index,
-                    columns=df_comparison.columns
-                )
+                # Normalize the data by total counts per sample
+                df_comparison_normalized = df_comparison.copy()
+                for col in df_comparison_normalized.columns:
+                    total_counts = df_comparison_normalized[col].sum()
+                    if total_counts > 0:  # Avoid division by zero
+                        df_comparison_normalized[col] = df_comparison_normalized[col] / total_counts
                 
                 # Create clustermap with normalized data clustering
                 g = sns.clustermap(df_comparison_normalized,
                                   cmap="viridis",
-                                  cbar_kws={'label': 'Normalized Mutation Count'},
+                                  cbar_kws={'label': 'Proportion of Total Mutations'},
                                   yticklabels=True,  # Show mutation type names
                                   xticklabels=True,
                                   figsize=(20, 14),
@@ -200,7 +339,7 @@ def main():
                                   cbar_pos=(0.02, 0.32, 0.03, 0.2))  # Position colorbar left
                 
                 # Set titles
-                g.fig.suptitle('Original vs Repaired Corrected Mutation Contexts (Normalized)\n', 
+                g.fig.suptitle('Original vs Repaired Corrected Mutation Contexts (Proportion Normalized)\n', 
                               fontsize=16, y=0.95)
                 
                 # Rotate x-axis labels
@@ -461,6 +600,9 @@ def main():
     print("\n🎉 Heatmap generation completed!")
     print("\n📊 Generated files:")
     print("  • Original heatmap: results/heatmap_original.png")
+    print("  • PCA plot (by time): results/pca_original_mutations_by_timepoint.png")
+    print("  • PCA plot (by block): results/pca_original_mutations_by_block.png")
+    print("  • PCA elbow plot: results/pca_original_mutations_elbow.png")
     print("  • Unrepaired corrected heatmap: results/heatmap_unrepaired_corrected.png")
     print("  • Repaired corrected heatmap: results/heatmap_repaired_corrected.png")
     print("  • Comparison heatmap (Original vs Corrected): results/heatmap_comparison.png")
