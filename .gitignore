@@ -1,12 +1,7 @@
 hg19.fa
 hg19.fa.fai
 BRP/*
-mutation_outputs/*
-mutation_corrected_outputs_repaired/*
-mutation_corrected_outputs_unrepaired/*
 /scripts/__pycache__
 /__pycache__
-/mutation_repaired
-/mutation_unrepaired
 temp/gdc-client
 .DS_Store
